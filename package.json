@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --port 4000",
     "start": "wrangler dev",
     "test": "vitest",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "db:local:clear": "rm -rf .wrangler/state/v3/d1",
+    "db:local:init": "pnpm wrangler d1 migrations apply referrals --local",
+    "db:local:reset": "pnpm db:local:clear && pnpm db:local:init"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.2",
@@ -15,5 +18,8 @@
     "typescript": "^5.5.2",
     "vitest": "2.0.5",
     "wrangler": "^3.60.3"
+  },
+  "dependencies": {
+    "@tsndr/cloudflare-worker-router": "^3.2.10"
   }
 }
