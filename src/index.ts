@@ -1,5 +1,4 @@
 import { Router, RouterHandler } from '@tsndr/cloudflare-worker-router'
-
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
@@ -49,7 +48,7 @@ const referralList: RSRouterHandler = async function (
 	const refcode = decodeURIComponent(req.params.refcode)
 	const referralsDB = env.REFERRALS
 	const response = await referralsDB.prepare(`
-    SELECT referred_at, reward FROM referrals
+    SELECT referred_at, rewarded FROM referrals
     WHERE refcode = ?
     `).
 		bind(refcode).
@@ -97,17 +96,19 @@ const refcodeGet: RSRouterHandler = async function (
 const referredByGet: RouterHandler = async function (
 	{ req, env }
 ) {
-	const email = req.params.email
+	const email = decodeURIComponent(req.params.email)
 	const result = await env.REFERRALS.
 		prepare(`SELECT refcode FROM referrals WHERE email = ?`).
 		bind(email).
 		first()
+		console.log("REFERRRED", email, result)
 	return Response.json({
 		refcode: result?.refcode
 	})
 }
 
 const router = new Router<Env, ExecutionContext, Request>()
+// TODO: need to update to allow different origins in different envs
 router.cors({ allowOrigin: 'http://localhost:3000' })
 router.get('/referrals/:refcode', referralList)
 router.post('/referrals/create', referralCreate)

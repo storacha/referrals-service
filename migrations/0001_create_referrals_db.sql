@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS referrals (
   email TEXT PRIMARY KEY, 
   refcode TEXT UNIQUE,
   referred_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  reward BOOLEAN,
+  selected_plan TEXT,
+  rewarded BOOLEAN,
   FOREIGN KEY(refcode) REFERENCES users(refcode)
 );
