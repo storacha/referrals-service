@@ -1,4 +1,5 @@
 import { Router, RouterHandler } from '@tsndr/cloudflare-worker-router'
+import Stripe from 'stripe'
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
@@ -11,16 +12,7 @@ import { Router, RouterHandler } from '@tsndr/cloudflare-worker-router'
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-
-import { customAlphabet } from 'nanoid'
-
-// 16 characters from this alphabet is plenty safe enough - per https://zelark.github.io/nano-id-cc/
-// "399B IDs needed, in order to have a 1% probability of at least one collision."
-const REFCODE_LENGTH = 16
-// from https://github.com/CyberAP/nanoid-dictionary - "This list should protect you from accidentally getting obscene words in generated strings."
-const nanoid = customAlphabet("6789BCDFGHJKLMNPQRTWbcdfghjkmnpqrtwz")
-
-const generateRefcode = () => nanoid(REFCODE_LENGTH)
+import { createRefcode, createReferral, getRefcode, getReferredBy, listReferrals } from './db'
 
 type RSRouterHandler = RouterHandler<Env>
 
@@ -28,96 +20,101 @@ const referralCreate: RSRouterHandler = async function (
 	{ req, env }
 ) {
 	const form = await req.formData()
-	const email = form.get('email')
-	const refcode = form.get('refcode')
-	const referralsDB = env.REFERRALS
-	const insertStmt = referralsDB.prepare(`
-	INSERT INTO referrals (email, refcode) 
-	VALUES (?, ?)
-	`).bind(email, refcode)
-	const result = await insertStmt.run()
-	if (result.error) {
-		return new Response(result.error, { status: 500 })
+	const email = form.get('email')?.toString()
+	const refcode = form.get('refcode')?.toString()
+	if (!email){
+		return new Response('invalid email', { status: 400 })
+	} else if (!refcode) {
+		return new Response('invalid refcode', { status: 400 })
+	} else {
+		await createReferral(env.REFERRALS, email, refcode)
+		return Response.json({})
 	}
-	return Response.json({})
 }
 
 const referralList: RSRouterHandler = async function (
 	{ req, env }
 ) {
 	const refcode = decodeURIComponent(req.params.refcode)
-	const referralsDB = env.REFERRALS
-	const response = await referralsDB.prepare(`
-    SELECT referred_at, rewarded FROM referrals
-    WHERE refcode = ?
-    `).
-		bind(refcode).
-		all();
-	const referrals = response.results.map(result => ({
-		referredAt: result.referred_at,
-		reward: Boolean(result.reward)
-	}))
-	return Response.json({ referrals })
+	return Response.json({
+		referrals: await listReferrals(env.REFERRALS, refcode)
+	})
 }
 
 export const refcodeCreate: RSRouterHandler = async function (
 	{ req, env }
 ) {
 	const form = await req.formData()
-	const email = form.get('email')
-	const refcode = generateRefcode()
-	const referralsDB = env.REFERRALS
-	const insertStmt = referralsDB.prepare(`
-	INSERT INTO users (email, refcode) 
-	VALUES (?, ?)
-	`).bind(email, refcode)
-	const result = await insertStmt.run()
-	if (result.error) {
-		return new Response(result.error, { status: 500 })
+	const email = form.get('email')?.toString()
+	if (email) {
+		return Response.json({
+			refcode: await createRefcode(
+				env.REFERRALS,
+				email
+			)
+		})
+	} else {
+		return new Response('invalid email', { status: 400 })
 	}
-	return Response.json({
-		refcode
-	})
 }
 
 const refcodeGet: RSRouterHandler = async function (
 	{ req, env }
 ) {
-	const email = decodeURIComponent(req.params.email)
-	const result = await env.REFERRALS.
-		prepare(`SELECT refcode FROM users WHERE email = ?`).
-		bind(email).
-		first()
 	return Response.json({
-		refcode: result?.refcode
+		refcode: await getRefcode(
+			env.REFERRALS,
+			decodeURIComponent(req.params.email)
+		)
 	})
 }
 
 const referredByGet: RouterHandler = async function (
 	{ req, env }
 ) {
-	const email = decodeURIComponent(req.params.email)
-	const result = await env.REFERRALS.
-		prepare(`SELECT refcode FROM referrals WHERE email = ?`).
-		bind(email).
-		first()
-		console.log("REFERRRED", email, result)
 	return Response.json({
-		refcode: result?.refcode
+		refcode: await getReferredBy(
+			env.REFERRALS,
+			decodeURIComponent(req.params.email)
+		)
 	})
 }
 
 const router = new Router<Env, ExecutionContext, Request>()
 // TODO: need to update to allow different origins in different envs
-router.cors({ allowOrigin: 'http://localhost:3000' })
 router.get('/referrals/:refcode', referralList)
 router.post('/referrals/create', referralCreate)
 router.post('/refcode/create', refcodeCreate)
 router.get('/refcode/:email', refcodeGet)
 router.get('/referredby/:email', referredByGet)
 
+export async function calculateConversionsAndCredits (event: ScheduledController, env: Env, context: ExecutionContext) {
+	const result = await env.REFERRALS.prepare(
+		`SELECT email FROM referrals WHERE NOT rewarded`
+	).run()
+	if (result.error) {
+		throw result.error
+	} else {
+		const emails = result.results.map(r => r.email)
+		if (emails.length > 0) {
+			const stripe = new Stripe(env.STRIPE_API_KEY)
+			const query = "email: '" + emails.join("' OR email: '") + "'"
+			console.log(query)
+			const searchResult = await stripe.customers.search({ query })
+			console.log("STRIPE:", searchResult)
+		} else {
+			console.log("NOTHING TO CHECK")
+		}
+	}
+}
+
 export default {
 	async fetch (request, env, ctx): Promise<Response> {
+		router.cors({ allowOrigin: env.ALLOW_ORIGIN })
 		return router.handle(request, env, ctx)
+	},
+
+	async scheduled (event, env, ctx) {
+		ctx.waitUntil(calculateConversionsAndCredits(event, env, ctx))
 	},
 } satisfies ExportedHandler<Env>;

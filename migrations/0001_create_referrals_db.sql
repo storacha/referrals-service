@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS referrals (
   refcode TEXT UNIQUE,
   referred_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   selected_plan TEXT,
-  rewarded BOOLEAN,
+  rewarded BOOLEAN DEFAULT false,
   FOREIGN KEY(refcode) REFERENCES users(refcode)
 );
