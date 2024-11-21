@@ -12,7 +12,7 @@ import Stripe from 'stripe'
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-import { createRefcode, createReferral, getRefcode, getReferredBy, listReferrals } from './db'
+import { createRefcode, createReferral, getEmailOfRefcode, getRefcode, getReferredBy, listReferrals } from './db'
 
 type RSRouterHandler = RouterHandler<Env>
 
@@ -22,13 +22,18 @@ const referralCreate: RSRouterHandler = async function (
   const form = await req.formData()
   const email = form.get('email')?.toString()
   const refcode = form.get('refcode')?.toString()
-  if (!email){
+  if (!email) {
     return new Response('invalid email', { status: 400 })
   } else if (!refcode) {
     return new Response('invalid refcode', { status: 400 })
   } else {
-    await createReferral(env.REFERRALS, email, refcode)
-    return Response.json({})
+    const referrerEmail = await getEmailOfRefcode(env.REFERRALS, refcode)
+    if (email === referrerEmail) {
+      return new Response('cannot refer  oneself', { status: 400 })
+    } else {
+      await createReferral(env.REFERRALS, email, refcode)
+      return Response.json({})
+    }
   }
 }
 
@@ -99,9 +104,9 @@ export async function calculateConversionsAndCredits (event: ScheduledController
     if (emails.length > 0) {
       const stripe = new Stripe(env.STRIPE_API_KEY)
       const query = "email: '" + emails.join("' OR email: '") + "'"
-      console.log(query)
+      console.log("STRIPE QUERY:", query)
       const searchResult = await stripe.customers.search({ query })
-      console.log("STRIPE:", searchResult)
+      console.log("STRIPE RESULT:", searchResult)
       // TODO: calculate credits and conversions from stripe and the referrals db
     } else {
       console.log("NOTHING TO CHECK")

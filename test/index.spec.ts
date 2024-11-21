@@ -5,7 +5,7 @@ import { calculateConversionsAndCredits } from '../src/index';
 import { createRefcode, createReferral } from '../src/db';
 import Stripe from 'stripe'
 
-describe('Refcode creation', () => {
+describe('the referral service', () => {
   it('creates a refcode successfully', async () => {
     const email = 'test@example.com'
     const form = new FormData()
@@ -40,7 +40,6 @@ describe('Refcode creation', () => {
     // there shouldn't be any referrals yet
     let referralsResponse = await SELF.fetch(`http://example.com/referrals/${encodeURIComponent(refcode)}`);
     let referralsResponseJson = await referralsResponse.json() as any
-    console.log(referralsResponseJson)
     expect(referralsResponseJson).toHaveProperty('referrals');
     expect(referralsResponseJson.referrals).toBeInstanceOf(Array);
     expect(referralsResponseJson.referrals).toHaveLength(0)
@@ -66,15 +65,47 @@ describe('Refcode creation', () => {
     expect(referralsResponseJson.referrals).toBeInstanceOf(Array);
     expect(referralsResponseJson.referrals).toHaveLength(1)
 
-
     const referredByResponse = await SELF.fetch(`http://example.com/referredby/${encodeURIComponent(newUserEmail)}`);
     const referredByResponseJson = await referredByResponse.json() as any
     expect(referredByResponseJson).toHaveProperty('refcode')
 
 
   });
+
+  it('will not create a referral for the user who created the refcode', async () => {
+
+    // create a refcode
+    const email = 'test@example.com'
+    const form = new FormData()
+    form.append('email', email)
+    const createRefcodeResponse = await SELF.fetch('http://example.com/refcode/create',
+      {
+        method: 'POST',
+        body: (() => {
+          const form = new FormData()
+          form.append('email', email)
+          return form
+        })()
+      }
+    )
+    const refcode = (await createRefcodeResponse.json() as any).refcode as string
+
+    const response = await SELF.fetch('http://example.com/referrals/create',
+      {
+        method: 'POST',
+        body: (() => {
+          const form = new FormData()
+          form.append('refcode', refcode)
+          form.append('email', email)
+          return form
+        })()
+      }
+    )
+    expect(response.status).toBe(400)
+  })
 });
 
+// TODO: this 
 function useDummyStripeEnvironmentConstants () {
   const referrerEmail = 'referrer@example.con'
   const referralEmail = 'referral@example.com'
@@ -105,6 +136,10 @@ async function resetDummyStripeEnvironment (stripe: Stripe) {
   await createDummyStripeEnvironment(stripe)
 }
 
+
+// TODO: Work in Progress 
+// I'm trying to use Stripe sandboxes to create a static remote environment reliable enough for testing
+// the credits and conversions reconciliation logic but haven't finished yet - TBD after we get v1 out the door
 describe('conversion and credit cronjob', () => {
   it('checks stripe', async () => {
     const stripe = new Stripe(env.STRIPE_API_KEY)

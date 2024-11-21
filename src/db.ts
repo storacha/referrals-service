@@ -28,7 +28,7 @@ export async function listReferrals (db: D1Database, refcode: string) {
     all();
   return response.results.map(result => ({
     referredAt: result.referred_at,
-    reward: Boolean(result.reward)
+    rewarded: Boolean(result.rewarded)
   }))
 }
 
@@ -57,5 +57,12 @@ export async function getReferredBy (db: D1Database, email: string): Promise<str
     bind(email).
     first()
   return result ? result.refcode as string : null
+}
+
+export async function getEmailOfRefcode (db: D1Database, refcode: string): Promise<string | null> {
+  const result = await db.prepare(`SELECT email FROM users WHERE refcode = ?`).
+    bind(refcode).
+    first()
+  return result ? result.email as string : null
 }
 
