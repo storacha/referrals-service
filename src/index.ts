@@ -102,6 +102,7 @@ export async function calculateConversionsAndCredits (event: ScheduledController
       console.log(query)
       const searchResult = await stripe.customers.search({ query })
       console.log("STRIPE:", searchResult)
+      // TODO: calculate credits and conversions from stripe and the referrals db
     } else {
       console.log("NOTHING TO CHECK")
     }
