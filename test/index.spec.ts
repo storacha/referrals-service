@@ -140,7 +140,7 @@ async function resetDummyStripeEnvironment (stripe: Stripe) {
 // TODO: Work in Progress 
 // I'm trying to use Stripe sandboxes to create a static remote environment reliable enough for testing
 // the credits and conversions reconciliation logic but haven't finished yet - TBD after we get v1 out the door
-describe('conversion and credit cronjob', () => {
+describe.skip('conversion and credit cronjob', () => {
   it('checks stripe', async () => {
     const stripe = new Stripe(env.STRIPE_API_KEY)
     // uncomment this to reset the stripe environment
