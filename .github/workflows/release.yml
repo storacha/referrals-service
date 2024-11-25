@@ -10,7 +10,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/test
       - name: Deploy to Staging
         uses: cloudflare/wrangler-action@2.0.0
@@ -28,7 +28,7 @@ jobs:
         with:
           release-type: node
           package-name: referrals-service
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/test
       - name: Deploy to Production
         uses: cloudflare/wrangler-action@2.0.0
