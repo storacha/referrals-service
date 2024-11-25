@@ -20,10 +20,20 @@ enabled = true
 
 
 [[d1_databases]]
-binding = "REFERRALS" # i.e. available in your Worker on env.DB
+binding = "REFERRALS"
 database_name = "referrals"
 database_id = "65fdb889-7f6a-4cf7-b12a-3272ee730504"
 preview_database_id = "REFERRALS"
+
+[[env.staging.d1_databases]]
+binding = "REFERRALS"
+database_name = "referrals"
+database_id = "96dc4903-fd46-4a1b-a6ef-96060c198f7b"
+
+[[env.production.d1_databases]]
+binding = "REFERRALS"
+database_name = "referrals"
+database_id = "783a91d6-63ae-454b-8f26-ac015e862376"
 
 [vars]
 ALLOW_ORIGIN = "http://localhost:3004"
