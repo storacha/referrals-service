@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@tsndr/cloudflare-worker-router": "^3.2.10",
+    "nanoid": "^5.0.8",
     "stripe": "^17.3.1"
   }
 }
