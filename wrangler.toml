@@ -39,7 +39,8 @@ database_id = "783a91d6-63ae-454b-8f26-ac015e862376"
 ALLOW_ORIGIN = "http://localhost:3004"
 
 [env.staging.vars] 
-ALLOW_ORIGIN = "https://staging.console.storacha.network"
+# set ALLOW_ORIGIN to * for now to let the service work with all the preview deployments which use random URLs
+ALLOW_ORIGIN = "*"
 
 [env.production.vars] 
 ALLOW_ORIGIN = "https://console.storacha.network"
