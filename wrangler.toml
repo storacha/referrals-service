@@ -28,12 +28,12 @@ preview_database_id = "REFERRALS"
 [[env.staging.d1_databases]]
 binding = "REFERRALS"
 database_name = "referrals"
-database_id = "96dc4903-fd46-4a1b-a6ef-96060c198f7b"
+database_id = "5d13f8e2-6407-4ea0-b95a-a14c88efe012"
 
 [[env.production.d1_databases]]
 binding = "REFERRALS"
 database_name = "referrals"
-database_id = "783a91d6-63ae-454b-8f26-ac015e862376"
+database_id = "28f82ea3-8c6a-46ca-b832-17aaaa496a29"
 
 [vars]
 ALLOW_ORIGIN = "http://localhost:3004"
