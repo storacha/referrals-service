@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- "reward" tracks whether the referee has paid long enough for the referrer to be rewarded
 CREATE TABLE IF NOT EXISTS referrals (
   email TEXT PRIMARY KEY, 
-  refcode TEXT UNIQUE,
+  refcode TEXT,
   referred_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   selected_plan TEXT,
   rewarded BOOLEAN DEFAULT false,
