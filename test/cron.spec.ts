@@ -1,4 +1,3 @@
-// test/index.spec.ts
 import { env, createExecutionContext, SELF } from 'cloudflare:test';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { calculateConversionsAndCredits } from '../src/index';
