@@ -31,8 +31,17 @@ const referralCreate: RSRouterHandler = async function (
     if (email === referrerEmail) {
       return new Response('cannot refer  oneself', { status: 400 })
     } else {
-      await createReferral(env.REFERRALS, email, refcode)
-      return Response.json({})
+      try {
+        await createReferral(env.REFERRALS, email, refcode)
+        return Response.json({})
+      } catch (e: any) {
+        if (e.message === 'D1_ERROR: UNIQUE constraint failed: referrals.email: SQLITE_CONSTRAINT') {
+          return new Response('already created a referral for that email', { status: 400 })
+        } else {
+          console.error(e)
+          return new Response('unknown error, please check server logs', { status: 500 })
+        }
+      }
     }
   }
 }
