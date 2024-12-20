@@ -31,8 +31,17 @@ const referralCreate: RSRouterHandler = async function (
     if (email === referrerEmail) {
       return new Response('cannot refer  oneself', { status: 400 })
     } else {
-      await createReferral(env.REFERRALS, email, refcode)
-      return Response.json({})
+      try {
+        await createReferral(env.REFERRALS, email, refcode)
+        return Response.json({})
+      } catch (e: any) {
+        if (e.message === 'D1_ERROR: UNIQUE constraint failed: referrals.email: SQLITE_CONSTRAINT') {
+          return new Response('already created a referral for that email', { status: 400 })
+        } else {
+          console.error(e)
+          return new Response('unknown error, please check server logs', { status: 500 })
+        }
+      }
     }
   }
 }
@@ -52,12 +61,18 @@ export const refcodeCreate: RSRouterHandler = async function (
   const form = await req.formData()
   const email = form.get('email')?.toString()
   if (email) {
-    return Response.json({
-      refcode: await createRefcode(
-        env.REFERRALS,
-        email
-      )
-    })
+    try {
+      return Response.json({
+        refcode: await createRefcode(env.REFERRALS, email)
+      })
+    } catch (e: any) {
+      if (e.message === 'D1_ERROR: UNIQUE constraint failed: users.email: SQLITE_CONSTRAINT') {
+        return new Response('already created a referral for that email', { status: 400 })
+      } else {
+        console.error(e)
+        return new Response('unknown error, please check server logs', { status: 500 })
+      }
+    }
   } else {
     return new Response('invalid email', { status: 400 })
   }
