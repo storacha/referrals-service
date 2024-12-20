@@ -39,10 +39,34 @@ describe('the referral service', () => {
   it('creates a refcode successfully', async () => {
     const email = 'test@example.com'
     const createResponse = await createRefcode(email)
-    expect(await createResponse.json()).toHaveProperty('refcode');
+    const createResult: any = await createResponse.json()
+    expect(createResult).toHaveProperty('refcode');
+    const refcodeFromCreate = createResult.refcode
 
     const getResponse = await getRefcode(email);
-    expect(await getResponse.json()).toHaveProperty('refcode');
+    const getResult: any = await getResponse.json()
+    expect(getResult).toHaveProperty('refcode');
+    const refcodeFromGet = getResult.refcode
+    expect(refcodeFromCreate).toEqual(refcodeFromGet)
+  });
+
+  it('will not create a second refcode for the same user', async () => {
+    const email = 'test@example.com'
+    const createResponse = await createRefcode(email)
+    const createResult: any = await createResponse.json()
+    expect(createResult).toHaveProperty('refcode');
+    const refcodeFromCreate = createResult.refcode
+
+    // trying to create a refcode a second time should fail
+    const create2Response = await createRefcode(email);
+    expect(create2Response.status).toBe(400)
+
+    // and the get response should match the first create
+    const getResponse = await getRefcode(email);
+    const getResult: any = await getResponse.json()
+    expect(getResult).toHaveProperty('refcode');
+    const refcodeFromGet = getResult.refcode
+    expect(refcodeFromCreate).toEqual(refcodeFromGet)
   });
 
   it('creates a referral successfully', async () => {
