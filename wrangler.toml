@@ -36,7 +36,7 @@ database_name = "referrals"
 database_id = "28f82ea3-8c6a-46ca-b832-17aaaa496a29"
 
 [vars]
-ALLOW_ORIGIN = "http://localhost:3004"
+ALLOW_ORIGIN = "http://localhost:3000"
 
 [env.staging.vars] 
 # set ALLOW_ORIGIN to * for now to let the service work with all the preview deployments which use random URLs
